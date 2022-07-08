@@ -1,0 +1,33 @@
+body {
+  padding: 50px;
+  font: 14px "Lucida Grande", Helvetica, Arial, sans-serif;
+}
+
+a {
+  color: #00B7FF;
+}
+
+.column {
+  float: left;
+  width: 50%;
+}
+
+/* Clear floats after the columns */
+.row:after {
+  content: "";
+  display: table;
+  clear: both;
+}
+
+/* Zona en donde arrastrar la imagen. */
+.imageContainer{
+/* #drop_zone { */
+  border: 5px solid blue;
+  width:  200px;
+  height: 100px;
+}
+
+.draggedOn{
+  background-color:gray;
+  opacity:0.4;
+}
