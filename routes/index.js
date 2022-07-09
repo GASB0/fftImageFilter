@@ -7,6 +7,16 @@ const crypto = require('crypto');
 const { spawn } = require('node:child_process');
 const multer = require('multer');
 
+// Postgres configuration
+
+const sql = postgres({
+  host: 'localhost',
+  port: 6666,
+  database: 'noise_remover',
+  username: 'postgres',
+  password: '',
+})
+
 // Multer configurations
 const multerMemStorage = multer.memoryStorage();
 const upload = multer({ storage: multerMemStorage });
@@ -18,7 +28,16 @@ router.get('/', function(req, res, next) {
 
 router.get('/fourier_app', function(req, res, next) {
   // Generacion del Cookie para la identificacion de la session.
-  res.cookie('SessionID', crypto.randomUUID());
+  let cookieID = crypto.randomUUID();
+  res.cookie('SessionID', cookieID);
+
+  // Adicion de un nuevo cookie de session a la base de datos
+  sql`
+   INSERT INTO sessions (id) values (${cookieID});
+  `.then(() => {
+    console.log(cookieID);
+  })
+
   // Renderizacion de la pagina que servira como interfaz.
   res.render('fourier_app', { title: 'the Fourier app!' });
 });
@@ -52,6 +71,12 @@ router.post('/listener', upload.single('file'), (req, res) => {
     const magickInfo = spawn('magick', ['-', 'info:-']);
     magickInfo.stdout.pipe(process.stdout);
 
+    sql`
+    UPDATE sessions SET fft_files = ${imageBuffer} WHERE id = ${req.cookies.SessionID};
+    `.then(() => {
+      console.log('Archivos de FFT insertada');
+    });
+
     magickInfo.on('spawn', () => {
       magickInfo.stdin.write(imageBuffer);
       magickInfo.stdin.end();
@@ -77,11 +102,15 @@ router.post('/submit', upload.single('file'), (req, res) => {
   // layer de doodle que vayan a enviar. Debe ser posible utilizar cookies 
   // para estos fines.
   console.log(req.cookies.SessionID);
-  console.log(req.file.buffer);
-  fs.appendFile('dammit', req.file.buffer, err => {
-    if (err) { console.log(err); return; }
-    console.log('The file has been written!');
-  })
+  let doodleImageBuffer = req.file.buffer;
+  console.log();
+
+  sql`SELECT fft_files FROM sessions 
+      WHERE id = ${req.cookies.SessionID}
+     `.then((result) => {
+    // TODO: Buscar la forma de como procesar las imagenes de la base de datos y del doodle recibido.
+  });
+
   res.end('Done, m8s');
 });
 
