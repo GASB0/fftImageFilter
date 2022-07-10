@@ -127,24 +127,20 @@ router.post('/submit', upload.single('file'), (req, res) => {
       fs.writeFileSync('./doodleMask.png', doodleMask);
 
       //// Seccion de extraccion del par de imagenes del archivo .miff
-      // Inicializacion de los procesos y los pipes necesarios
-      const cat = spawn('cat', ['-']);
-      cat.stderr.pipe(process.stdout);
-      const convert = spawn('convert', ['-', '-ift', 'PNG:-']);
+      const convert = spawn('magick', ['-', '(', '-clone', '0', '-clone', '2', '-compose', 'multiply', '-composite', ')', '-swap', '0', '+delete', '+delete', '-ift', 'PNG:-']);
       convert.stderr.pipe(process.stdout);
       const ffmpeg = spawn('ffmpeg', ['-i', '-', '-f', 'image2pipe', '-vcodec', 'ppm', '-']);
       ffmpeg.stderr.pipe(process.stdout);
-
-      cat.stdout.pipe(ffmpeg.stdin);
       ffmpeg.stdout.pipe(convert.stdin);
 
       const magProm = extractPNGImageFromMiff(0, result[0].fft_files);
       const phaseProm = extractPNGImageFromMiff(1, result[0].fft_files);
       magProm.then(magBuffer => {
         phaseProm.then(phaseBuffer => {
-          cat.stdin.write(magBuffer);
-          cat.stdin.write(phaseBuffer);
-          cat.stdin.end();
+          ffmpeg.stdin.write(magBuffer);
+          ffmpeg.stdin.write(phaseBuffer);
+          ffmpeg.stdin.write(doodleMask);
+          ffmpeg.stdin.end();
 
           let imageRec = [];
           convert.stdout.on('data', (chunk) => {
@@ -159,28 +155,7 @@ router.post('/submit', upload.single('file'), (req, res) => {
 
         })
       })
-
-
-      // Manipulacion sobre el espectro de magnitud de la imagen almacenada.
-      // const magManipulation = spawn('magick', ['-', '(', '-clone', '0', '-clone', '1', '-compose', 'multiply', '-composite', ')', '-swap', '0', '+delete', '-ift', 'PNG:-']);
-
-      // magManipulation.stdin.write(result[0].fft_files);
-      // magManipulation.stdin.end();
-
-      // let resultBufferArray = []
-      // magManipulation.stdout.on('data', (chunk) => {
-      //   resultBufferArray.push(chunk);
-      // });
-
-      // magManipulation.stdout.on('end', () => {
-      //   console.log('Se va a escribir el archivo!');
-      //   resultImageBuffer = Buffer.concat(resultBufferArray);
-      //   fs.writeFileSync('./result.png', resultImageBuffer);
-      //   console.log('Se ha escrito el archivo');
-      // });
-
     })
-
   });
 
   res.end('Done, m8s');
@@ -203,6 +178,5 @@ function extractPNGImageFromMiff(index, miffBuffer) {
     });
   })
 }
-
 
 module.exports = router;
