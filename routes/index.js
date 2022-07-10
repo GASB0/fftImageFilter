@@ -109,6 +109,35 @@ router.post('/submit', upload.single('file'), (req, res) => {
       WHERE id = ${req.cookies.SessionID}
      `.then((result) => {
     // TODO: Buscar la forma de como procesar las imagenes de la base de datos y del doodle recibido.
+
+    // Declaracion de los procesos para la manipulacion de las imagenes.
+    const cat = spawn('cat', ['-']);
+    // cat.stdout.pipe(process.stdout);
+    const ffmpegProcess = spawn('ffmpeg', ['-i', '-', '-f', 'image2pipe', '-vcodec', 'ppm', '-']);
+    // ffmpegProcess.stderr.pipe(process.stdout);
+    const magick = spawn('convert', ['-', 'PNG:-']);
+    magick.stdout.pipe(process.stdout);
+    // magick.stderr.pipe(process.stdout);
+
+    // Escritura sobre el inicio del pipe
+    cat.stdin.write(doodleImageBuffer);
+    cat.stdin.write(doodleImageBuffer);
+    // cat.stdin.write(result[0].fft_files);
+    cat.stdin.end();
+
+    // Conexion (pipe) entre los procesos
+    cat.stdout.pipe(ffmpegProcess.stdin);
+    ffmpegProcess.stdout.pipe(magick.stdin);
+
+    let bufferList = [];
+    magick.stdout.on('data', (chunk) => {
+      bufferList.push(chunk);
+    });
+    magick.stdout.on('end', () => {
+      const doodleMask = Buffer.concat(bufferList);
+      fs.writeFileSync('./doodleMask.png', doodleMask);
+    })
+
   });
 
   res.end('Done, m8s');
