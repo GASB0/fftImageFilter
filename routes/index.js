@@ -111,36 +111,98 @@ router.post('/submit', upload.single('file'), (req, res) => {
     // TODO: Buscar la forma de como procesar las imagenes de la base de datos y del doodle recibido.
 
     // Declaracion de los procesos para la manipulacion de las imagenes.
-    const cat = spawn('cat', ['-']);
-    // cat.stdout.pipe(process.stdout);
-    const ffmpegProcess = spawn('ffmpeg', ['-i', '-', '-f', 'image2pipe', '-vcodec', 'ppm', '-']);
-    // ffmpegProcess.stderr.pipe(process.stdout);
-    const magick = spawn('convert', ['-', 'PNG:-']);
-    magick.stdout.pipe(process.stdout);
-    // magick.stderr.pipe(process.stdout);
+    const magick = spawn('convert', ['-', '-alpha', 'extract', '-negate', 'PNG:-']);
 
-    // Escritura sobre el inicio del pipe
-    cat.stdin.write(doodleImageBuffer);
-    cat.stdin.write(doodleImageBuffer);
-    // cat.stdin.write(result[0].fft_files);
-    cat.stdin.end();
+    // Extraccion de mascara a partir del doodle
+    magick.stdin.write(doodleImageBuffer);
+    magick.stdin.end();
 
-    // Conexion (pipe) entre los procesos
-    cat.stdout.pipe(ffmpegProcess.stdin);
-    ffmpegProcess.stdout.pipe(magick.stdin);
-
-    let bufferList = [];
+    let doodleBuffer = [];
     magick.stdout.on('data', (chunk) => {
-      bufferList.push(chunk);
+      doodleBuffer.push(chunk);
     });
+
     magick.stdout.on('end', () => {
-      const doodleMask = Buffer.concat(bufferList);
+      const doodleMask = Buffer.concat(doodleBuffer);
       fs.writeFileSync('./doodleMask.png', doodleMask);
+
+      //// Seccion de extraccion del par de imagenes del archivo .miff
+      // Inicializacion de los procesos y los pipes necesarios
+      const cat = spawn('cat', ['-']);
+      cat.stderr.pipe(process.stdout);
+      const convert = spawn('convert', ['-', '-ift', 'PNG:-']);
+      convert.stderr.pipe(process.stdout);
+      const ffmpeg = spawn('ffmpeg', ['-i', '-', '-f', 'image2pipe', '-vcodec', 'ppm', '-']);
+      ffmpeg.stderr.pipe(process.stdout);
+
+      cat.stdout.pipe(ffmpeg.stdin);
+      ffmpeg.stdout.pipe(convert.stdin);
+
+      const magProm = extractPNGImageFromMiff(0, result[0].fft_files);
+      const phaseProm = extractPNGImageFromMiff(1, result[0].fft_files);
+      magProm.then(magBuffer => {
+        phaseProm.then(phaseBuffer => {
+          cat.stdin.write(magBuffer);
+          cat.stdin.write(phaseBuffer);
+          cat.stdin.end();
+
+          let imageRec = [];
+          convert.stdout.on('data', (chunk) => {
+            imageRec.push(chunk);
+          })
+
+          convert.stdout.on('end', () => {
+            let wholeImage = Buffer.concat(imageRec);
+            fs.writeFileSync('./result.png', wholeImage);
+            console.log('Imagen escrita!')
+          })
+
+        })
+      })
+
+
+      // Manipulacion sobre el espectro de magnitud de la imagen almacenada.
+      // const magManipulation = spawn('magick', ['-', '(', '-clone', '0', '-clone', '1', '-compose', 'multiply', '-composite', ')', '-swap', '0', '+delete', '-ift', 'PNG:-']);
+
+      // magManipulation.stdin.write(result[0].fft_files);
+      // magManipulation.stdin.end();
+
+      // let resultBufferArray = []
+      // magManipulation.stdout.on('data', (chunk) => {
+      //   resultBufferArray.push(chunk);
+      // });
+
+      // magManipulation.stdout.on('end', () => {
+      //   console.log('Se va a escribir el archivo!');
+      //   resultImageBuffer = Buffer.concat(resultBufferArray);
+      //   fs.writeFileSync('./result.png', resultImageBuffer);
+      //   console.log('Se ha escrito el archivo');
+      // });
+
     })
 
   });
 
   res.end('Done, m8s');
 });
+
+function extractPNGImageFromMiff(index, miffBuffer) {
+  return new Promise((resolve, rejects) => {
+    const magick = spawn('magick', [`-[${index}]`, 'PNG:-']);
+    magick.stdin.write(miffBuffer);
+    magick.stdin.end();
+
+    let bufferList = []
+    magick.stdout.on('data', (chunk) => {
+      bufferList.push(chunk);
+    });
+
+    magick.stdout.on('end', () => {
+      imageBuffer = Buffer.concat(bufferList);
+      resolve(imageBuffer);
+    });
+  })
+}
+
 
 module.exports = router;
