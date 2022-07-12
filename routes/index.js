@@ -145,20 +145,18 @@ router.post('/submit', upload.single('file'), (req, res) => {
           let imageRec = [];
           convert.stdout.on('data', (chunk) => {
             imageRec.push(chunk);
-          })
+          });
 
           convert.stdout.on('end', () => {
-            let wholeImage = Buffer.concat(imageRec);
-            fs.writeFileSync('./result.png', wholeImage);
-            console.log('Imagen escrita!')
-          })
-
-        })
-      })
-    })
+            let procesedImage = Buffer.concat(imageRec);
+            res.status(200).send(procesedImage);
+            res.end();
+          });
+        });
+      });
+    });
   });
 
-  res.end('Done, m8s');
 });
 
 function extractPNGImageFromMiff(index, miffBuffer) {

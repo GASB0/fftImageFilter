@@ -160,8 +160,38 @@ function insertSubmissionButton(doodleLayer) {
       fetch('/submit', {
         method: 'POST',
         body: formData,
-      }).then(() => {
-        console.log('Submission Done!');
+      }).then((response) => {
+        // Dios, perdoname por lo que estoy a punto de hacer...
+        let reader = response.body.getReader();
+        let data = [];
+        reader.read().then(function processData(result) {
+          if (!result.done) {
+            data.push(result.value.buffer);
+            return reader.read().then(processData);
+          }
+          console.log('Submission Done!');
+          let blob = new Blob([...data], { type: "image/png" });
+          let fileReader = new FileReader();
+          fileReader.readAsDataURL(blob);
+          fileReader.onloadend = () => {
+            const img = new Image();
+            img.src = fileReader.result;
+            img.onload = () => {
+              let resultSection = document.getElementById('imageSubmission');
+              let containerDiv = document.createElement('div');
+              containerDiv.classList.add('column')
+              resultSection.appendChild(containerDiv);
+              resultSection.appendChild(document.createElement('br'));
+              let textoDescriptivo = document.createElement('p');
+              textoDescriptivo.textContent = 'Resultado del filtrado de la imagen';
+
+              containerDiv.appendChild(textoDescriptivo);
+              containerDiv.appendChild(img);
+            }
+          }
+
+        })
+
       });
     }, 'image/png');
 
