@@ -13,6 +13,10 @@ function dragLeaveHandler(ev) {
 }
 
 function dropHandler(ev) {
+  // TODO: Agregar manera de "sanitize" las imagenes que se suben.
+  // Seria una buena idea tratar de limitar o ajustar de forma automatica
+  // la resolucion de la imagen subida y tambien limitar el numero de formatos
+  // que se pueden subir.
   let url = '/listener';
   ev.preventDefault();
   console.log('Fichero arrastrados');
@@ -30,32 +34,20 @@ function dropHandler(ev) {
       method: 'POST',
       body: formData,
     })
-      .then(response => {
-        let reader = response.body.getReader();
-        let data = [];
-        reader.read().then(function processData(result) {
-          if (!result.done) {
-            data.push(result.value.buffer);
-            return reader.read().then(processData);
-          }
-          console.log('Ya se termino de recibir el asunto');
+      .then(response => { return StreamReader(response.body.getReader()); })
+      .then(stream => { return new Response(stream) })
+      .then(response => { return response.blob() })
+      .then(blob => { return URL.createObjectURL(blob) })
+      .then(url => {
 
-          let blob = new Blob([...data], { type: "image/png" });
-          let fileReader = new FileReader();
-          fileReader.readAsDataURL(blob);
-          fileReader.onloadend = () => {
-            const img = new Image();
-            img.src = fileReader.result;
-            img.onload = () => {
-              let doodleLayer = createCanvas(img); // -> Crea un canvas con las dimensiones de la imagen transformada.
-              insertSubmissionButton(doodleLayer);
-            }
-          }
-        }).catch((err) => {
-          console.log('sorry, m8. Something went wrong');
-          console.log(err);
-        });
-      });
+        let img = new Image();
+        img.src = url;
+        img.onload = () => {
+          let doodleLayer = createCanvas(img);
+          insertSubmissionButton(doodleLayer);
+        }
+      })
+
     removeDragData(ev);
     const imageField = document.getElementById('imageField');
     imageField.classList.remove('imageContainer');
@@ -111,6 +103,7 @@ function createCanvas(img) {
 };
 
 function funcionesDeDibujado(doodleLayer, img) {
+  // TODO: Agregar forma de modificar el diametro del pincel para el dibujado sobre el canvas.
   const imageToResizeCanvas = img;
   const drawingContext = doodleLayer.getContext('2d');
 
@@ -150,6 +143,7 @@ window.onload = () => {
 }
 
 function insertSubmissionButton(doodleLayer) {
+  // TODO: Refactoriar esta seccion de codigo.
   let buttonContainer = document.getElementById('imageSubmission');
   let submissionButton = document.createElement('button');
   submissionButton.onclick = () => {
@@ -174,28 +168,36 @@ function insertSubmissionButton(doodleLayer) {
           let fileReader = new FileReader();
           fileReader.readAsDataURL(blob);
           fileReader.onloadend = () => {
-            const img = new Image();
-            img.src = fileReader.result;
-            img.onload = () => {
-              let resultSection = document.getElementById('imageSubmission');
-              let containerDiv = document.createElement('div');
-              containerDiv.classList.add('column')
-              resultSection.appendChild(containerDiv);
-              resultSection.appendChild(document.createElement('br'));
-              let textoDescriptivo = document.createElement('p');
-              textoDescriptivo.textContent = 'Resultado del filtrado de la imagen';
-
-              containerDiv.appendChild(textoDescriptivo);
-              containerDiv.appendChild(img);
+            let resultContainer = document.getElementById('resultContainer');
+            resultContainer.src = fileReader.result;
+            // TODO: Encontrar una solucion mas elegante para el rercargado de la imagen desplegada.
+            resultContainer.onload = () => {
+              console.log('Se ha terminado de entregar el resultado.');
             }
           }
-
         })
-
       });
     }, 'image/png');
 
   }
   submissionButton.innerText = 'Submit';
   buttonContainer.appendChild(submissionButton);
+}
+
+function StreamReader(reader) {
+  return new ReadableStream({
+    start(controller) {
+      return pump();
+      function pump() {
+        return reader.read().then(readValue => {
+          if (readValue.done) {
+            console.log('Se ha terminado de leer el stream');
+            return;
+          }
+          controller.enqueue(readValue.value);
+          return pump();
+        });
+      }
+    }
+  })
 }
