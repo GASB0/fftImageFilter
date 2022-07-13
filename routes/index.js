@@ -108,8 +108,6 @@ router.post('/submit', upload.single('file'), (req, res) => {
   sql`SELECT fft_files FROM sessions 
       WHERE id = ${req.cookies.SessionID}
      `.then((result) => {
-    // TODO: Buscar la forma de como procesar las imagenes de la base de datos y del doodle recibido.
-
     // Declaracion de los procesos para la manipulacion de las imagenes.
     const magick = spawn('convert', ['-', '-alpha', 'extract', '-negate', 'PNG:-']);
 
@@ -124,7 +122,6 @@ router.post('/submit', upload.single('file'), (req, res) => {
 
     magick.stdout.on('end', () => {
       const doodleMask = Buffer.concat(doodleBuffer);
-      fs.writeFileSync('./doodleMask.png', doodleMask);
 
       //// Seccion de extraccion del par de imagenes del archivo .miff
       const convert = spawn('magick', ['-', '(', '-clone', '0', '-clone', '2', '-compose', 'multiply', '-composite', ')', '-swap', '0', '+delete', '+delete', '-ift', 'PNG:-']);

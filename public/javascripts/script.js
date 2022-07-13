@@ -2,6 +2,36 @@ var previewWidth = 250;
 var previewHeight = 250;
 var pos = { x: 0, y: 0 };
 
+// Configuraciones para el puntero al momento de entrar o salir a la parte del canvas
+pencilWidth = 10; // Diametro del pincel por defecto
+
+// TODO: Agregar varias funciones para la forma del cursor sobre el canvas de dibujado.
+
+const cursorRounded = document.querySelector('.cursor');
+console.log(cursorRounded);
+
+function wheelHandler(ev) {
+  ev.preventDefault();
+  // TODO: Implementar aumentar o reducir el diametro del pincel usando la ruedita con la ruedita.
+}
+
+document.getElementById('imageResult').onmouseenter = () => {
+  cursorRounded.style.width = pencilWidth;
+  cursorRounded.style.height = pencilWidth;
+  document.getElementsByTagName('body')[0].style.cursor = `none`;
+}
+
+document.getElementById('imageResult').onmouseleave = () => {
+  document.getElementsByTagName('body')[0].style.cursor = 'auto';
+}
+
+const moveCursor = (e) => {
+  // Debes de llevar primero el asunto a donde se encuentra el mouse.
+  // Holly fricking crap, funciono. Lo que tengo que tratar de hacer ahora 
+  // entender el por que esto funciona...
+  cursorRounded.style.transform = `translate3d(calc(${e.clientX}px - 50%), calc(${e.clientY}px - 50%), 0)`
+}
+
 function dragOverHandler(ev) {
   ev.preventDefault();
   console.log('File in drop zone');
@@ -75,7 +105,6 @@ function previewFile(file) {
 }
 
 function createCanvas(img) {
-  // TODO: Arreglar las dimensiones de este canvas (deben de ser de la imagen transformada)
   console.log(img.width, img.height);
 
   const canvasContainer = document.getElementById('imageResult');
@@ -103,7 +132,6 @@ function createCanvas(img) {
 };
 
 function funcionesDeDibujado(doodleLayer, img) {
-  // TODO: Agregar forma de modificar el diametro del pincel para el dibujado sobre el canvas.
   const imageToResizeCanvas = img;
   const drawingContext = doodleLayer.getContext('2d');
 
@@ -118,9 +146,10 @@ function funcionesDeDibujado(doodleLayer, img) {
     pos.x = e.offsetX;
     pos.y = e.offsetY;
   }
+
   function draw(e) {
     if (e.buttons !== 1) return;
-    drawingContext.lineWidth = 20;
+    drawingContext.lineWidth = pencilWidth;
     drawingContext.lineCap = 'round';
     drawingContext.strokeStyle = '#c0392b';
 

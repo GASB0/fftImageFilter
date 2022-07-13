@@ -31,3 +31,16 @@ a {
   background-color:gray;
   opacity:0.4;
 }
+
+.cursor {
+  width: 10px;
+  height: 10px;
+  border-radius: 100%;
+  border: 2px solid white;
+  position: fixed;
+  pointer-events: none;
+  left: 0;
+  top: 0;
+  z-index: 2;
+  transform: translate(calc(-50% + 15px), -50%); /* Esto parece ser prescindible */
+}
