@@ -8,21 +8,34 @@ pencilWidth = 10; // Diametro del pincel por defecto
 // TODO: Agregar varias funciones para la forma del cursor sobre el canvas de dibujado.
 
 const cursorRounded = document.querySelector('.cursor');
+cursorRounded.style.visibility = 'hidden';
+
 console.log(cursorRounded);
 
-function wheelHandler(ev) {
+document.getElementById('imageResult').onwheel = (ev) => {
   ev.preventDefault();
-  // TODO: Implementar aumentar o reducir el diametro del pincel usando la ruedita con la ruedita.
+  console.log(cursorRounded);
+  if (ev.deltaY < 0) {
+    pencilWidth += 2;
+  } else {
+    pencilWidth -= 2;
+  }
+
+  cursorRounded.style.height = `${pencilWidth}px`
+  cursorRounded.style.width = `${pencilWidth}px`
+  console.log(cursorRounded.style.height);
 }
 
 document.getElementById('imageResult').onmouseenter = () => {
   cursorRounded.style.width = pencilWidth;
   cursorRounded.style.height = pencilWidth;
   document.getElementsByTagName('body')[0].style.cursor = `none`;
+  cursorRounded.style.visibility = 'visible';
 }
 
 document.getElementById('imageResult').onmouseleave = () => {
   document.getElementsByTagName('body')[0].style.cursor = 'auto';
+  cursorRounded.style.visibility = 'hidden';
 }
 
 const moveCursor = (e) => {
@@ -64,7 +77,10 @@ function dropHandler(ev) {
       method: 'POST',
       body: formData,
     })
-      .then(response => { return StreamReader(response.body.getReader()); })
+      .then(response => {
+        document.getElementsByTagName('body')[0].style.cursor = 'progress';
+        return StreamReader(response.body.getReader());
+      })
       .then(stream => { return new Response(stream) })
       .then(response => { return response.blob() })
       .then(blob => { return URL.createObjectURL(blob) })
@@ -74,6 +90,7 @@ function dropHandler(ev) {
         img.src = url;
         img.onload = () => {
           let doodleLayer = createCanvas(img);
+          document.getElementsByTagName('body')[0].style.cursor = 'auto';
           insertSubmissionButton(doodleLayer);
         }
       })
@@ -184,6 +201,7 @@ function insertSubmissionButton(doodleLayer) {
         method: 'POST',
         body: formData,
       }).then((response) => {
+        document.getElementsByTagName('body')[0].style.cursor = 'progress';
         // Dios, perdoname por lo que estoy a punto de hacer...
         let reader = response.body.getReader();
         let data = [];
@@ -202,6 +220,7 @@ function insertSubmissionButton(doodleLayer) {
             // TODO: Encontrar una solucion mas elegante para el rercargado de la imagen desplegada.
             resultContainer.onload = () => {
               console.log('Se ha terminado de entregar el resultado.');
+              document.getElementsByTagName('body')[0].style.cursor = 'auto';
             }
           }
         })
