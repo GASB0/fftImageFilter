@@ -35,7 +35,7 @@ router.get('/fourier_app', function(req, res, next) {
   sql`
    INSERT INTO sessions (id) values (${cookieID});
   `.then(() => {
-    console.log(cookieID);
+    console.log('Se ha agregado la siguiente session', cookieID);
   })
 
   // Renderizacion de la pagina que servira como interfaz.
@@ -43,8 +43,9 @@ router.get('/fourier_app', function(req, res, next) {
 });
 
 router.post('/listener', upload.single('file'), (req, res) => {
-
   // Configuracion de los comandos para el procesamiento
+  let dims = req.body.dimensions.split(',').map((number) => { return Number(number) });
+
   const convert = spawn('magick', ['-', '-fft', 'MIFF:-']);
   convert.stderr.pipe(process.stdout);
   const log_scaling = spawn('magick', ['-[0]', '-auto-level', '-evaluate', 'log', '10000', 'PNG:-']);
@@ -67,18 +68,18 @@ router.post('/listener', upload.single('file'), (req, res) => {
   });
 
   convert.stdout.on('end', () => {
-    let imageBuffer = Buffer.concat(bufferList);
+    let fftImageBuffer = Buffer.concat(bufferList);
     const magickInfo = spawn('magick', ['-', 'info:-']);
     magickInfo.stdout.pipe(process.stdout);
 
     sql`
-    UPDATE sessions SET fft_files = ${imageBuffer} WHERE id = ${req.cookies.SessionID};
+    UPDATE sessions SET fft_files = ${fftImageBuffer}, width=${dims[0]}, height=${dims[1]} WHERE id = ${req.cookies.SessionID};
     `.then(() => {
       console.log('Archivos de FFT insertada');
     });
 
     magickInfo.on('spawn', () => {
-      magickInfo.stdin.write(imageBuffer);
+      magickInfo.stdin.write(fftImageBuffer);
       magickInfo.stdin.end();
     });
   });
@@ -101,11 +102,10 @@ router.post('/submit', upload.single('file'), (req, res) => {
   // Los unicos capaces de acceder a esta ruta son los que hayan generado un 
   // layer de doodle que vayan a enviar. Debe ser posible utilizar cookies 
   // para estos fines.
-  console.log(req.cookies.SessionID);
+  console.log('Se esta realizando el procesamiento para la sesion: ', req.cookies.SessionID);
   let doodleImageBuffer = req.file.buffer;
-  console.log();
 
-  sql`SELECT fft_files FROM sessions 
+  sql`SELECT fft_files, width, height FROM sessions 
       WHERE id = ${req.cookies.SessionID}
      `.then((result) => {
     // Declaracion de los procesos para la manipulacion de las imagenes.
@@ -124,7 +124,8 @@ router.post('/submit', upload.single('file'), (req, res) => {
       const doodleMask = Buffer.concat(doodleBuffer);
 
       //// Seccion de extraccion del par de imagenes del archivo .miff
-      const convert = spawn('magick', ['-', '(', '-clone', '0', '-clone', '2', '-compose', 'multiply', '-composite', ')', '-swap', '0', '+delete', '+delete', '-ift', 'PNG:-']);
+      const convert = spawn('magick', ['-', '(', '-clone', '0', '-clone', '2', '-compose', 'multiply', '-composite', ')',
+        '-swap', '0', '+delete', '+delete', '-ift', '-crop', `${result[0].width}x${result[0].height}+0+0`, 'PNG:-']);
       convert.stderr.pipe(process.stdout);
       const ffmpeg = spawn('ffmpeg', ['-i', '-', '-f', 'image2pipe', '-vcodec', 'ppm', '-']);
       ffmpeg.stderr.pipe(process.stdout);

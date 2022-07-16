@@ -1,6 +1,7 @@
 <!DOCTYPE html>
 <html lang="en">
 <!-- TODO: Mejorar la apariencia grafica de la pagina -->
+<!-- Esto tambien incluye hacer que la pagina sea reactiva hasta cierto punto.   -->
 
 <head>
   <title>Fourier App</title>
@@ -13,18 +14,18 @@
   </h1>
 
   <div>
-    <p>Debes de arrastrar una imagen en el recuadro especificado (si aparece)</p>
+    <p>Drag an image to the blue box</p>
   </div>
 
   <div class="row">
     <div class="column">
-      <p>La imagen de preview</p>
+      <p>Preview image</p>
       <div id="imageField" class="imageContainer" ondrop="dropHandler(event);" ondragover="dragOverHandler(event);"
         ondragleave="dragLeaveHandler(event)"></div>
     </div>
 
     <div class="column">
-      <p>Espectro de magnitud de la transformada de la imagen</p>
+      <p>Scaled magnitude spectrum of the images Fourier transform</p>
       <div id="imageResult" style="position: relative;" onmousemove="moveCursor(event)">
       </div>
 
@@ -36,13 +37,13 @@
     </div>
 
     <div class="column">
-      <p>Resultado de la transformacion</p>
+      <p>Resulting image</p>
       <div id="filteringResult" style="position: relative;"></div>
       <img id="resultContainer">
     </div>
   </div>
 
-  <div class="cursor"></div>
+  <div class="roundCursor"></div>
   <script type="text/javascript" src="/javascripts/script.js"></script>
 </body>
 

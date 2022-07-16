@@ -7,42 +7,38 @@ pencilWidth = 10; // Diametro del pincel por defecto
 
 // TODO: Agregar varias funciones para la forma del cursor sobre el canvas de dibujado.
 
-const cursorRounded = document.querySelector('.cursor');
-cursorRounded.style.visibility = 'hidden';
-
-console.log(cursorRounded);
+const selectedCursor = document.querySelector('.roundCursor');
+selectedCursor.style.visibility = 'hidden';
 
 document.getElementById('imageResult').onwheel = (ev) => {
   ev.preventDefault();
-  console.log(cursorRounded);
   if (ev.deltaY < 0) {
     pencilWidth += 2;
   } else {
     pencilWidth -= 2;
   }
 
-  cursorRounded.style.height = `${pencilWidth}px`
-  cursorRounded.style.width = `${pencilWidth}px`
-  console.log(cursorRounded.style.height);
+  selectedCursor.style.height = `${pencilWidth}px`
+  selectedCursor.style.width = `${pencilWidth}px`
 }
 
 document.getElementById('imageResult').onmouseenter = () => {
-  cursorRounded.style.width = pencilWidth;
-  cursorRounded.style.height = pencilWidth;
+  selectedCursor.style.width = pencilWidth;
+  selectedCursor.style.height = pencilWidth;
   document.getElementsByTagName('body')[0].style.cursor = `none`;
-  cursorRounded.style.visibility = 'visible';
+  selectedCursor.style.visibility = 'visible';
 }
 
 document.getElementById('imageResult').onmouseleave = () => {
   document.getElementsByTagName('body')[0].style.cursor = 'auto';
-  cursorRounded.style.visibility = 'hidden';
+  selectedCursor.style.visibility = 'hidden';
 }
 
 const moveCursor = (e) => {
   // Debes de llevar primero el asunto a donde se encuentra el mouse.
   // Holly fricking crap, funciono. Lo que tengo que tratar de hacer ahora 
   // entender el por que esto funciona...
-  cursorRounded.style.transform = `translate3d(calc(${e.clientX}px - 50%), calc(${e.clientY}px - 50%), 0)`
+  selectedCursor.style.transform = `translate3d(calc(${e.clientX}px - 50%), calc(${e.clientY}px - 50%), 0)`
 }
 
 function dragOverHandler(ev) {
@@ -65,18 +61,16 @@ function dropHandler(ev) {
   console.log('Fichero arrastrados');
 
   if (ev.dataTransfer.items) {
-    let theFile = ev.dataTransfer.items[0];
+    let imageFile = ev.dataTransfer.items[0];
 
     // Creating preview
-    previewFile(theFile.getAsFile());
-
-    let formData = new FormData();
-    formData.append("file", theFile.getAsFile());
-
-    fetch(url, {
-      method: 'POST',
-      body: formData,
-    })
+    previewFile(imageFile.getAsFile())
+      .then((widthxheight) => {
+        let formData = new FormData();
+        formData.append("file", imageFile.getAsFile());
+        formData.append("dimensions", widthxheight);
+        return fetch(url, { method: 'POST', body: formData })
+      })
       .then(response => {
         document.getElementsByTagName('body')[0].style.cursor = 'progress';
         return StreamReader(response.body.getReader());
@@ -85,7 +79,6 @@ function dropHandler(ev) {
       .then(response => { return response.blob() })
       .then(blob => { return URL.createObjectURL(blob) })
       .then(url => {
-
         let img = new Image();
         img.src = url;
         img.onload = () => {
@@ -107,23 +100,22 @@ function removeDragData(ev) {
 }
 
 function previewFile(file) {
-  // Esta funcion se llama cada vez que se tira una imagen en el espacio correspondiente.
-  let reader = new FileReader();
-  reader.readAsDataURL(file);
-  reader.onloadend = () => {
-    let img = document.createElement('img');
-    img.src = reader.result;
-    // img.width = previewWidth;
-    // img.height = previewHeight;
-    img.onload = () => {
-      document.getElementById('imageField').appendChild(img);
+  return new Promise((resolve, reject) => {
+    // Esta funcion se llama cada vez que se tira una imagen en el espacio correspondiente.
+    let reader = new FileReader();
+    reader.readAsDataURL(file);
+    reader.onloadend = () => {
+      let img = document.createElement('img');
+      img.src = reader.result;
+      img.onload = () => {
+        document.getElementById('imageField').appendChild(img);
+        resolve([img.width, img.height]);
+      }
     }
-  }
+  })
 }
 
 function createCanvas(img) {
-  console.log(img.width, img.height);
-
   const canvasContainer = document.getElementById('imageResult');
   const imageLayer = document.createElement('canvas');
   imageLayer.width = img.width;
@@ -148,6 +140,7 @@ function createCanvas(img) {
   return doodleLayer;
 };
 
+// TODO: Agreagr la posiblidad de borrar elementos dibujados sobre el canvas.
 function funcionesDeDibujado(doodleLayer, img) {
   const imageToResizeCanvas = img;
   const drawingContext = doodleLayer.getContext('2d');

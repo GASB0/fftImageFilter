@@ -32,7 +32,7 @@ a {
   opacity:0.4;
 }
 
-.cursor {
+.roundCursor {
   width: 10px;
   height: 10px;
   border-radius: 100%;
