@@ -85,6 +85,7 @@ function dropHandler(ev) {
           let doodleLayer = createCanvas(img);
           document.getElementsByTagName('body')[0].style.cursor = 'auto';
           insertSubmissionButton(doodleLayer);
+          insertClearButton(doodleLayer);
         }
       })
 
@@ -93,6 +94,8 @@ function dropHandler(ev) {
     imageField.classList.remove('imageContainer');
     imageField.classList.remove('draggedOn');
   }
+
+  document.getElementById("defaultText").remove();
 }
 
 function removeDragData(ev) {
@@ -140,7 +143,7 @@ function createCanvas(img) {
   return doodleLayer;
 };
 
-// TODO: Agreagr la posiblidad de borrar elementos dibujados sobre el canvas.
+// TODO: Agreagar la posiblidad de borrar elementos dibujados sobre el canvas con el pincel
 function funcionesDeDibujado(doodleLayer, img) {
   const imageToResizeCanvas = img;
   const drawingContext = doodleLayer.getContext('2d');
@@ -181,6 +184,18 @@ window.onload = () => {
   console.log('Hola, el js funciona!!!');
 }
 
+function insertClearButton(doodleLayer) {
+  let buttonContainer = document.getElementById('clearDoodle');
+  let clearButton = document.createElement('button');
+
+  clearButton.onclick = () => {
+    doodleLayer.getContext('2d').clearRect(0, 0, doodleLayer.width, doodleLayer.height);
+  }
+
+  clearButton.innerText = 'clear doodle';
+  buttonContainer.appendChild(clearButton);
+}
+
 function insertSubmissionButton(doodleLayer) {
   // TODO: Refactoriar esta seccion de codigo.
   let buttonContainer = document.getElementById('imageSubmission');
@@ -211,6 +226,7 @@ function insertSubmissionButton(doodleLayer) {
             let resultContainer = document.getElementById('resultContainer');
             resultContainer.src = fileReader.result;
             // TODO: Encontrar una solucion mas elegante para el rercargado de la imagen desplegada.
+            // TODO: Agreagar los ejes con las unidades correspondientes al espectro de magnitudes.
             resultContainer.onload = () => {
               console.log('Se ha terminado de entregar el resultado.');
               document.getElementsByTagName('body')[0].style.cursor = 'auto';

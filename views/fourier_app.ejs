@@ -13,7 +13,7 @@
   <h1>Welcome to <%= title %>
   </h1>
 
-  <div>
+  <div id="defaultText">
     <p>Drag an image to the blue box</p>
   </div>
 
@@ -26,16 +26,22 @@
 
     <div class="column">
       <p>Scaled magnitude spectrum of the images Fourier transform</p>
-      <div id="imageResult" style="position: relative;" onmousemove="moveCursor(event)">
-      </div>
+      <div id="imageResult" style="position: relative;" onmousemove="moveCursor(event)"></div>
+    </div>
+  </div>
 
+  <!-- FIXME: Algunas imagenes tienen FFTs que son muy grandes y terminan cubriendo el boton de clear  -->
+  <div class="row">
+    <div class="column">
+      <div id="imageSubmission"></div>
+    </div>
+
+    <div class="column">
+      <div id="clearDoodle"></div>
     </div>
   </div>
 
   <div class="row">
-    <div id="imageSubmission">
-    </div>
-
     <div class="column">
       <p>Resulting image</p>
       <div id="filteringResult" style="position: relative;"></div>
