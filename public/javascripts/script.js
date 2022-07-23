@@ -175,9 +175,16 @@ function funcionesDeDibujado(doodleLayer, img) {
 
   window.addEventListener('load', resize);
   window.addEventListener('resize', resize);
-  document.addEventListener('mousemove', draw);
-  document.addEventListener('mouseenter', setPosition);
-  document.addEventListener('mousedown', setPosition);
+  document.getElementById('layer2').addEventListener('mousemove', draw);
+  document.getElementById('layer2').addEventListener('mouseenter', setPosition);
+  document.getElementById('layer2').addEventListener('mousedown', setPosition);
+  // TODO: Encontrar una solucion mas elegante
+  document.getElementById('layer2').addEventListener('click', () => {
+    drawingContext.fillStyle = '#c0392b';
+    drawingContext.beginPath();
+    drawingContext.arc(pos.x, pos.y, pencilWidth / 2, 0, 2 * Math.PI, true);
+    drawingContext.fill();
+  });
 }
 
 window.onload = () => {
