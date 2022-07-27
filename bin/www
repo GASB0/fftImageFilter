@@ -7,6 +7,21 @@
 var app = require('../app');
 var debug = require('debug')('fourier-app:server');
 var http = require('http');
+const schedule = require('node-schedule');
+const { sql } = require('../databaseConnection')
+
+/**
+* Scheduling database cleaning
+*/
+const job = schedule.scheduleJob('1 */2 * * * *', () => {
+  sql`DELETE FROM sessions WHERE timestamp > now() - interval '15 minutes';
+`.then((result) => {
+    console.log('Las cosas han sido borradas exitosamente');
+  }).catch(error => {
+    console.log('Algo salio mal con el borrado de las imagenes viejas.');
+    console.error(error);
+  })
+});
 
 /**
  * Get port from environment and store in Express.

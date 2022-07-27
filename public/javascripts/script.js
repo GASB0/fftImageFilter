@@ -5,22 +5,23 @@ var pos = { x: 0, y: 0 };
 // Configuraciones para el puntero al momento de entrar o salir a la parte del canvas
 pencilWidth = 10; // Diametro del pincel por defecto
 
-// TODO: Agregar varias funciones para la forma del cursor sobre el canvas de dibujado.
+// TODO: limitar el radio maximo del cursor en el cavnas
+function cursorSizeControl(img) {
+  document.getElementById('imageResult').onwheel = (ev) => {
+    ev.preventDefault();
+    if (ev.deltaY < 0 & pencilWidth < img.width & pencilWidth < img.height) {
+      pencilWidth += 2;
+    } else if (pencilWidth > 0) {
+      pencilWidth -= 2;
+    }
+    selectedCursor.style.height = `${pencilWidth}px`
+    selectedCursor.style.width = `${pencilWidth}px`
+  }
+}
 
+// TODO: Agregar varias funciones para la forma del cursor sobre el canvas de dibujado.
 const selectedCursor = document.querySelector('.roundCursor');
 selectedCursor.style.visibility = 'hidden';
-
-document.getElementById('imageResult').onwheel = (ev) => {
-  ev.preventDefault();
-  if (ev.deltaY < 0) {
-    pencilWidth += 2;
-  } else {
-    pencilWidth -= 2;
-  }
-
-  selectedCursor.style.height = `${pencilWidth}px`
-  selectedCursor.style.width = `${pencilWidth}px`
-}
 
 document.getElementById('imageResult').onmouseenter = () => {
   selectedCursor.style.width = pencilWidth;
@@ -85,7 +86,6 @@ function dropHandler(ev) {
           let doodleLayer = createCanvas(img);
           document.getElementsByTagName('body')[0].style.cursor = 'auto';
           insertSubmissionButton(doodleLayer);
-          insertClearButton(doodleLayer);
         }
       })
 
@@ -119,6 +119,7 @@ function previewFile(file) {
 }
 
 function createCanvas(img) {
+  cursorSizeControl(img);
   const canvasContainer = document.getElementById('imageResult');
   const imageLayer = document.createElement('canvas');
   imageLayer.width = img.width;
@@ -160,17 +161,21 @@ function funcionesDeDibujado(doodleLayer, img) {
     pos.y = e.offsetY;
   }
 
+  function doodleThing(e) {
+    setPosition(e);
+    var radgrad = drawingContext.createRadialGradient(pos.x, pos.y, pencilWidth / 2, pos.x, pos.y, pencilWidth * 1.5);
+    radgrad.addColorStop(0, 'rgba(255,0,0,1)');
+    radgrad.addColorStop(0, 'rgba(228,0,0,1)');
+    radgrad.addColorStop(1, 'rgba(228,0,0,0)');
+    // draw shape
+    drawingContext.fillStyle = radgrad;
+    drawingContext.fillRect(0, 0, img.width, img.height);
+    setPosition(e);
+  }
+
   function draw(e) {
     if (e.buttons !== 1) return;
-    drawingContext.lineWidth = pencilWidth;
-    drawingContext.lineCap = 'round';
-    drawingContext.strokeStyle = '#c0392b';
-
-    drawingContext.beginPath();
-    drawingContext.moveTo(pos.x, pos.y);
-    setPosition(e);
-    drawingContext.lineTo(pos.x, pos.y);
-    drawingContext.stroke();
+    doodleThing(e);
   }
 
   window.addEventListener('load', resize);
@@ -179,28 +184,16 @@ function funcionesDeDibujado(doodleLayer, img) {
   document.getElementById('layer2').addEventListener('mouseenter', setPosition);
   document.getElementById('layer2').addEventListener('mousedown', setPosition);
   // TODO: Encontrar una solucion mas elegante
-  document.getElementById('layer2').addEventListener('click', () => {
-    drawingContext.fillStyle = '#c0392b';
-    drawingContext.beginPath();
-    drawingContext.arc(pos.x, pos.y, pencilWidth / 2, 0, 2 * Math.PI, true);
-    drawingContext.fill();
+  document.getElementById('layer2').addEventListener('click', doodleThing);
+
+  document.getElementById('layer2').addEventListener('dblclick', () => {
+    doodleLayer.getContext('2d').clearRect(0, 0, doodleLayer.width, doodleLayer.height);
   });
+
 }
 
 window.onload = () => {
   console.log('Hola, el js funciona!!!');
-}
-
-function insertClearButton(doodleLayer) {
-  let buttonContainer = document.getElementById('clearDoodle');
-  let clearButton = document.createElement('button');
-
-  clearButton.onclick = () => {
-    doodleLayer.getContext('2d').clearRect(0, 0, doodleLayer.width, doodleLayer.height);
-  }
-
-  clearButton.innerText = 'clear doodle';
-  buttonContainer.appendChild(clearButton);
 }
 
 function insertSubmissionButton(doodleLayer) {
@@ -216,6 +209,11 @@ function insertSubmissionButton(doodleLayer) {
         method: 'POST',
         body: formData,
       }).then((response) => {
+        if (response.status == 404) {
+          // TODO: Cambiar este metodo de desplegar cuando algo se jodio
+          window.location.href = '/404/';
+          return;
+        }
         document.getElementsByTagName('body')[0].style.cursor = 'progress';
         // Dios, perdoname por lo que estoy a punto de hacer...
         let reader = response.body.getReader();

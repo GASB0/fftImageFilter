@@ -1,21 +1,9 @@
 const express = require('express');
-const fs = require('fs');
+const { sql } = require('../databaseConnection');
 const router = express.Router();
-const postgres = require('postgres');
 const crypto = require('crypto');
-
 const { spawn } = require('node:child_process');
 const multer = require('multer');
-
-// Postgres configuration
-
-const sql = postgres({
-  host: 'localhost',
-  port: 6666,
-  database: 'noise_remover',
-  username: 'postgres',
-  password: '',
-})
 
 // Multer configurations
 const multerMemStorage = multer.memoryStorage();
@@ -33,7 +21,7 @@ router.get('/fourier_app', function(req, res, next) {
 
   // Adicion de un nuevo cookie de session a la base de datos
   sql`
-   INSERT INTO sessions (id) values (${cookieID});
+INSERT INTO sessions (id, timestamp) values (${cookieID}, ${Date.now()});
   `.then(() => {
     console.log('Se ha agregado la siguiente session', cookieID);
   })
@@ -97,6 +85,12 @@ router.post('/listener', upload.single('file'), (req, res) => {
 
 });
 
+router.get('/404', (req, res) => {
+  // TODO: Cambiar este metodo de desplegar cuando algo se jodio
+  res.status(200).render('not_found', { title: '404' });
+  res.end();
+})
+
 router.post('/submit', upload.single('file'), (req, res) => {
   // TODO: Agregar mecanismos de seguridad para accede a esta ruta
   // Los unicos capaces de acceder a esta ruta son los que hayan generado un 
@@ -108,6 +102,10 @@ router.post('/submit', upload.single('file'), (req, res) => {
   sql`SELECT fft_files, width, height FROM sessions 
       WHERE id = ${req.cookies.SessionID}
      `.then((result) => {
+    if (!result.length > 0) {
+      res.status(404).end();
+      return;
+    }
     // Declaracion de los procesos para la manipulacion de las imagenes.
     const magick = spawn('convert', ['-', '-alpha', 'extract', '-negate', 'PNG:-']);
 
