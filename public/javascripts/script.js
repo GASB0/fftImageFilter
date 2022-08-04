@@ -5,7 +5,6 @@ var pos = { x: 0, y: 0 };
 // Configuraciones para el puntero al momento de entrar o salir a la parte del canvas
 pencilWidth = 10; // Diametro del pincel por defecto
 
-// TODO: limitar el radio maximo del cursor en el cavnas
 function cursorSizeControl(img) {
   document.getElementById('imageResult').onwheel = (ev) => {
     ev.preventDefault();
@@ -67,6 +66,10 @@ function dropHandler(ev) {
     // Creating preview
     previewFile(imageFile.getAsFile())
       .then((widthxheight) => {
+        if (widthxheight[0] > 300) {
+          throw new Error('Wrong image resolution!!!');
+        }
+
         let formData = new FormData();
         formData.append("file", imageFile.getAsFile());
         formData.append("dimensions", widthxheight);
@@ -88,6 +91,12 @@ function dropHandler(ev) {
           insertSubmissionButton(doodleLayer);
         }
       })
+      .catch(err => {
+        if (err) {
+          console.log(err);
+          location.reload();
+        }
+      })
 
     removeDragData(ev);
     const imageField = document.getElementById('imageField');
@@ -104,7 +113,6 @@ function removeDragData(ev) {
 
 function previewFile(file) {
   return new Promise((resolve, reject) => {
-    // Esta funcion se llama cada vez que se tira una imagen en el espacio correspondiente.
     let reader = new FileReader();
     reader.readAsDataURL(file);
     reader.onloadend = () => {
@@ -235,6 +243,7 @@ function insertSubmissionButton(doodleLayer) {
             resultContainer.onload = () => {
               console.log('Se ha terminado de entregar el resultado.');
               document.getElementsByTagName('body')[0].style.cursor = 'auto';
+              document.getElementById('resultImageDiv').style.visibility = 'visible';
             }
           }
         })

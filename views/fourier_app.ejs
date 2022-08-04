@@ -19,6 +19,16 @@
 
   <div class="row">
     <div class="column">
+      <div id="imageSubmission"></div>
+    </div>
+
+    <div class="column">
+      <div id="clearDoodle"></div>
+    </div>
+  </div>
+
+  <div class="row">
+    <div class="column">
       <p>Preview image</p>
       <div id="imageField" class="imageContainer" ondrop="dropHandler(event);" ondragover="dragOverHandler(event);"
         ondragleave="dragLeaveHandler(event)"></div>
@@ -30,23 +40,14 @@
     </div>
   </div>
 
-  <!-- FIXME: Algunas imagenes tienen FFTs que son muy grandes y terminan cubriendo el boton de clear  -->
-  <div class="row">
-    <div class="column">
-      <div id="imageSubmission"></div>
-    </div>
+  <hr>
 
-    <div class="column">
-      <div id="clearDoodle"></div>
-    </div>
+  <!-- FIXME: Algunas imagenes tienen FFTs que son muy grandes y terminan saliendose del div  -->
+  <div style="display:flex; justify-content:center">
+    <h2> Resulting image </h2>
   </div>
-
-  <div class="row">
-    <div class="column">
-      <p>Resulting image</p>
-      <div id="filteringResult" style="position: relative;"></div>
-      <img id="resultContainer">
-    </div>
+  <div id='resultImageDiv' style="visibility:hidden; display:flex; justify-content:center">
+    <img id="resultContainer">
   </div>
 
   <div class="roundCursor"></div>

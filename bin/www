@@ -13,7 +13,7 @@ const { sql } = require('../databaseConnection')
 /**
 * Scheduling database cleaning
 */
-const job = schedule.scheduleJob('1 */2 * * * *', () => {
+const job = schedule.scheduleJob('0 0 */2 * * *', () => {
   sql`DELETE FROM sessions WHERE timestamp > now() - interval '15 minutes';
 `.then((result) => {
     console.log('Las cosas han sido borradas exitosamente');
